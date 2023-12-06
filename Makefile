@@ -1,5 +1,5 @@
 OS := $(shell uname)
-CFLAGS := -Wall -Wextra -Werror -Wpedantic
+CFLAGS := -Wall -Wextra -Werror -pedantic
 ifeq ($(OS), Darwin)
 CC := clang
 else
@@ -21,6 +21,7 @@ $(bin): $(obj)
 main.o: main.c $(hdr)
 keycodes.o: keycodes.c
 commands.o: commands.c
+trie.o: trie.c
 $(obj):
 	$(CC) -c $(CFLAGS) $< -o $@
 

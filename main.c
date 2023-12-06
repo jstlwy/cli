@@ -5,13 +5,17 @@
 #include <string.h>
 #include "commands.h"
 #include "keycodes.h"
+#include "trie.h"
 
 #define INPUT_BUFFER_LEN 64
 
-int autocomplete(char usrInBuf[const static INPUT_BUFFER_LEN], const int inLen);
-
 int main(void)
 {
+    struct Trie trie = trieInit();
+    for (int i = 0; i < NUM_CMDS; i++) {
+        trieAddString(&trie, commands[i], i);
+    }
+
     // Save current terminal attributes so that they can be restored later
     struct termios old_attr;
     tcgetattr(STDIN_FILENO, &old_attr);
@@ -23,25 +27,23 @@ int main(void)
     setvbuf(stdout, NULL, _IONBF, 0);
 
     char usrInBuf[INPUT_BUFFER_LEN];
-    memset(usrInBuf, 0, INPUT_BUFFER_LEN);
+    memset(usrInBuf, '\0', INPUT_BUFFER_LEN);
+    size_t inLen = 0;
+
     char history[INPUT_BUFFER_LEN];
-    memset(history, 0, INPUT_BUFFER_LEN);
-    int inLen = 0;
-    int histLen = 0;
+    memset(history, '\0', INPUT_BUFFER_LEN);
+    size_t histLen = 0;
 
     printf("Type \"%s\" for a list of commands.\n", cmdShowCmdsStr);
     printf("Type \"%s\" to quit.\n", cmdExitStr);
     bool shouldContinue = true;
     while (shouldContinue) {
-        printf("%s--> ", ansiEraseLineSeq);
-        if (inLen > 0) {
-            printf("%s", usrInBuf);
-        }
+        printf("%s--> %s", ansiEraseLineSeq, usrInBuf);
 
         // Track whether to attempt to call a function
         // and which function to call
         bool shouldExecute = false;
-        int selection = -1;
+        size_t newSize;
 
         // First, handle user input
         char readBuf[4];
@@ -55,18 +57,21 @@ int main(void)
             }
             break;
         case KEY_TAB:
-            inLen = autocomplete(usrInBuf, inLen);
+            newSize = trieAutocomplete(&trie, INPUT_BUFFER_LEN, usrInBuf);
+            if (newSize > 0) {
+                inLen = newSize;
+            }
             break;
         case KEY_ENTER:
             shouldExecute = true;
             break;
         case KEY_ESCAPE:
             if (numRead == 1) {
-                memset(usrInBuf, 0, INPUT_BUFFER_LEN);
+                memset(usrInBuf, '\0', INPUT_BUFFER_LEN);
                 inLen = 0;
             } else if ((numRead == 3) && (memcmp(readBuf, ansiUpSeq, numRead) == 0)) {
                 memcpy(usrInBuf, history, INPUT_BUFFER_LEN);
-                inLen = histLen > 0 ? histLen - 1 : 0;
+                inLen = histLen;
             }
             break;
         case KEY_SPACE:
@@ -76,30 +81,25 @@ int main(void)
             }
             break;
         default:
-            if ((isVisibleAsciiChar(readBuf[0])) && (inLen < INPUT_BUFFER_LEN)) {
+            if ((isVisibleAsciiChar(readBuf[0])) && (inLen < INPUT_BUFFER_LEN-1)) {
                 usrInBuf[inLen++] = readBuf[0];
+                usrInBuf[inLen] = '\0';
             }
-            break;
         }
 
         if (!shouldExecute) {
             continue;
         }
 
-        printf("\n");
-        if (inLen < INPUT_BUFFER_LEN) {
-            usrInBuf[inLen++] = '\0';
-        } else {
-            usrInBuf[INPUT_BUFFER_LEN - 1] = '\0';
-        }
-        selection = findCommand(usrInBuf);
+        puts("");
+        const int selection = trieGetCmdIndex(&trie, INPUT_BUFFER_LEN, usrInBuf);
 
         // If the user entered a valid command, call the appropriate function
         switch (selection) {
         case CMD_SHOW_CMDS:
-            printf("Available commands:\n");
+            puts("Available commands:");
             for (int i = 0; i < NUM_CMDS; i++) {
-                printf("%s\n", commands[i]);
+                puts(commands[i]);
             }
             break;
         case CMD_SAY_HELLO:
@@ -109,7 +109,6 @@ int main(void)
             shouldContinue = false;
             break;
         default:
-            printf("Invalid command.\n");
             break;
         }
 
@@ -119,21 +118,9 @@ int main(void)
         inLen = 0;
     }
 
-    printf("%s", ansiEraseLineSeq);
+    puts(ansiEraseLineSeq);
     // Restore the old terminal attributes
     tcsetattr(STDIN_FILENO, TCSANOW, &old_attr);
+    trieDelete(&trie);
     return 0;
 }
-
-int autocomplete(char usrInBuf[const static INPUT_BUFFER_LEN], const int inLen)
-{
-    const size_t cmpSize = (size_t)inLen;
-    for (int i = 0; i < NUM_CMDS; i++) {
-        if (strncmp(usrInBuf, commands[i], cmpSize) == 0) {
-            memcpy(usrInBuf, commands[i], (size_t)commandLens[i]);
-            return commandLens[i];
-        }
-    }
-    return inLen;
-}
-
