@@ -55,11 +55,12 @@ void triePrint(const TRIE* const trie)
     puts("idx        | ch | iCmd       | nextSibling | firstChild");
     for (size_t i = 0; i < size; i++) {
         const TRIE_NODE* const tNode = trie->nodeArena + i;
-        printf("%10zu | %2c | %10d | %11d | %10d\n", i, tNode->ch, tNode->iCmd, tNode->nextSibling, tNode->firstChild);
+        printf("%10zu | %2c | %10zd | %11zd | %10zd\n", i, tNode->ch, tNode->iCmd, tNode->nextSibling, tNode->firstChild);
     }
 }
 
-static int trieAddNode(TRIE* const trie, const char ch)
+// Returns the index of the new node
+static ssize_t trieAddNode(TRIE* const trie, const char ch)
 {
     assert(trie != NULL);
     assert(isprint(ch));
@@ -87,32 +88,32 @@ static int trieAddNode(TRIE* const trie, const char ch)
     };
 
     trie->size++;
-    assert(current_size <= INT_MAX);
-    return (int)current_size;
+    assert(current_size <= SSIZE_MAX);
+    return (ssize_t)current_size;
 }
 
-static void trieNodeSetCommand(TRIE* const trie, const int iNode, const int iCmd)
+static void trieNodeSetCommand(TRIE* const trie, const ssize_t iNode, const ssize_t iCmd)
 {
     assert((iNode >= 0) && ((size_t)iNode < trie->capacity));
     TRIE_NODE* const tNode = trie->nodeArena + iNode;
     tNode->iCmd = iCmd;
 }
 
-static void trieNodeSetSibling(TRIE* const trie, const int iNode, const int iSibling)
+static void trieNodeSetSibling(TRIE* const trie, const ssize_t iNode, const ssize_t iSibling)
 {
     assert((iNode >= 0) && ((size_t)iNode < trie->capacity));
     TRIE_NODE* const tNode = trie->nodeArena + iNode;
     tNode->nextSibling = iSibling;
 }
 
-static void trieNodeSetChild(TRIE* const trie, const int iNode, const int iChild)
+static void trieNodeSetChild(TRIE* const trie, const ssize_t iNode, const ssize_t iChild)
 {
     assert((iNode >= 0) && ((size_t)iNode < trie->capacity));
     TRIE_NODE* const tNode = trie->nodeArena + iNode;
     tNode->firstChild = iChild;
 }
 
-void trieAddString(TRIE* const trie, const int iCmd, const char str[const])
+void trieAddString(TRIE* const trie, const ssize_t iCmd, const char str[const])
 {
     if (trie == NULL) {
         fprintf(stderr, "%s: ERROR: Null trie.\n", __func__);
@@ -146,7 +147,7 @@ void trieAddString(TRIE* const trie, const int iCmd, const char str[const])
         strLen++;
     }
 
-    int iNode = 0;
+    ssize_t iNode = 0;
     size_t iStr = 0;
 
     // Operations are simpler for the very first string
@@ -157,7 +158,7 @@ void trieAddString(TRIE* const trie, const int iCmd, const char str[const])
 
         // Set each subsequent character as the child of the character before it
         while (iStr < strLen) {
-            const int iNodeNext = trieAddNode(trie, str[iStr]);
+            const ssize_t iNodeNext = trieAddNode(trie, str[iStr]);
             trieNodeSetChild(trie, iNode, iNodeNext);
             iNode = iNodeNext;
             iStr++;
@@ -181,7 +182,7 @@ void trieAddString(TRIE* const trie, const int iCmd, const char str[const])
                 break;
             }
 
-            const int nextSibling = tNode->nextSibling;
+            const ssize_t nextSibling = tNode->nextSibling;
             if (nextSibling < 0) {
                 // Nothing else in the current level
                 break;
@@ -201,9 +202,9 @@ void trieAddString(TRIE* const trie, const int iCmd, const char str[const])
         iStr++;
 
         if (str[iStr] == '\0') {
-            const int iCmdOld = tNode->iCmd;
+            const ssize_t iCmdOld = tNode->iCmd;
             if (iCmdOld >= 0) {
-                printf("%s: WARNING: Changing node %d command index from %d to %d.\n", __func__, iNode, iCmdOld, iCmd);
+                printf("%s: WARNING: Changing node %zd command index from %zd to %zd.\n", __func__, iNode, iCmdOld, iCmd);
             }
             tNode->iCmd = iCmd;
             return;
@@ -218,7 +219,7 @@ void trieAddString(TRIE* const trie, const int iCmd, const char str[const])
         // The character wasn't found in the current level, so add a sibling
         assert(tNode->nextSibling < 0);
         assert(str[iStr] != '\0');
-        const int nextSibling = trieAddNode(trie, str[iStr++]);
+        const ssize_t nextSibling = trieAddNode(trie, str[iStr++]);
         trieNodeSetSibling(trie, iNode, nextSibling);
         iNode = nextSibling;
         tNode = trie->nodeArena + iNode;
@@ -232,7 +233,7 @@ void trieAddString(TRIE* const trie, const int iCmd, const char str[const])
             return;
         }
 
-        const int firstChild = trieAddNode(trie, currentChar);
+        const ssize_t firstChild = trieAddNode(trie, currentChar);
         trieNodeSetChild(trie, iNode, firstChild);
 
         iStr++;
@@ -243,7 +244,7 @@ void trieAddString(TRIE* const trie, const int iCmd, const char str[const])
 
 static void printAllCommands(
     const TRIE* const trie,
-    const int iNode,
+    const ssize_t iNode,
     const size_t cmdLen,
     char cmdBuf[const static MAX_WORD_LEN]
 ) {
@@ -303,7 +304,7 @@ size_t trieAutocomplete(const TRIE* const trie, const size_t buflen, char usrBuf
     }
 
     size_t iBuf = 0;
-    int iNode = 0;
+    ssize_t iNode = 0;
 
     // See if the current string is in the trie
     while ((iNode >= 0) && (iBuf < buflen)) {
@@ -322,7 +323,7 @@ size_t trieAutocomplete(const TRIE* const trie, const size_t buflen, char usrBuf
                 break;
             }
 
-            const int nextSibling = tNode->nextSibling;
+            const ssize_t nextSibling = tNode->nextSibling;
             if (nextSibling < 0) {
                 // No more nodes in the current level
                 return 0;
@@ -372,7 +373,7 @@ size_t trieAutocomplete(const TRIE* const trie, const size_t buflen, char usrBuf
     return iBuf;
 }
 
-int trieGetCmdIndex(const TRIE* const trie, const size_t buflen, char usrBuf[const buflen])
+ssize_t trieGetCmdIndex(const TRIE* const trie, const size_t buflen, char usrBuf[const buflen])
 {
     if (trie == NULL) {
         fprintf(stderr, "%s: ERROR: Null trie.\n", __func__);
@@ -403,7 +404,7 @@ int trieGetCmdIndex(const TRIE* const trie, const size_t buflen, char usrBuf[con
     }
 
     size_t iBuf = 0;
-    int iNode = 0;
+    ssize_t iNode = 0;
 
     while ((iNode >= 0) && (iBuf < buflen)) {
         const TRIE_NODE* tNode = trie->nodeArena + iNode;
@@ -416,7 +417,7 @@ int trieGetCmdIndex(const TRIE* const trie, const size_t buflen, char usrBuf[con
                 break;
             }
 
-            const int nextSibling = tNode->nextSibling;
+            const ssize_t nextSibling = tNode->nextSibling;
             if (nextSibling < 0) {
                 // No matching characters found in this level
                 return -1;

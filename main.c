@@ -95,7 +95,7 @@ int main(void)
         }
 
         putchar('\n');
-        const int selection = trieGetCmdIndex(&trie, INPUT_BUFFER_LEN, usrInBuf);
+        const ssize_t selection = trieGetCmdIndex(&trie, INPUT_BUFFER_LEN, usrInBuf);
 
         // If the user entered a valid command, call the appropriate function
         switch (selection) {
