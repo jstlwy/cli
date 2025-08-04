@@ -17,7 +17,7 @@ typedef struct TrieNode {
 typedef struct Trie {
     size_t capacity;
     size_t size;
-    TRIE_NODE* trieArena;
+    TRIE_NODE* nodeArena;
 } TRIE;
 
 TRIE trieGetNew(void);

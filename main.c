@@ -16,11 +16,6 @@ int main(void)
     TRIE trie = trieGetNew();
     for (int i = 0; i < NUM_CMDS; i++) {
         trieAddString(&trie, i, commands[i]);
-#ifdef DEBUG
-        puts("\nPrinting the current trie:");
-        triePrint(&trie);
-        putchar('\n');
-#endif
     }
 
     // Save current terminal attributes so that they can be restored later
@@ -101,9 +96,6 @@ int main(void)
 
         putchar('\n');
         const int selection = trieGetCmdIndex(&trie, INPUT_BUFFER_LEN, usrInBuf);
-#ifdef DEBUG
-        printf("%s: Command index: %d\n", __func__, selection);
-#endif
 
         // If the user entered a valid command, call the appropriate function
         switch (selection) {
@@ -126,6 +118,7 @@ int main(void)
             shouldContinue = false;
             break;
         default:
+            puts("Command not found.");
             break;
         }
 

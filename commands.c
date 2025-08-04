@@ -4,12 +4,12 @@
 
 #define STRLEN(str) (sizeof(str) - 1)
 
-const char cmdHelpStr[]      = "help";
-const char cmdShowCmdsStr[]  = "commands";
-const char cmdSayHelloStr[]  = "hello";
-const char cmdHellaStr[]     = "hella";
-const char cmdPrintTrieStr[] = "trie";
-const char cmdExitStr[]      = "exit";
+static const char cmdHelpStr[]      = "help";
+static const char cmdShowCmdsStr[]  = "commands";
+static const char cmdSayHelloStr[]  = "hello";
+static const char cmdHellaStr[]     = "hella";
+static const char cmdPrintTrieStr[] = "trie";
+static const char cmdExitStr[]      = "exit";
 
 const char* const commands[NUM_CMDS] = {
     [CMD_HELP]       = cmdHelpStr,
@@ -18,15 +18,6 @@ const char* const commands[NUM_CMDS] = {
     [CMD_HELLA]      = cmdHellaStr,
     [CMD_PRINT_TRIE] = cmdPrintTrieStr,
     [CMD_EXIT]       = cmdExitStr
-};
-
-const int commandLens[NUM_CMDS] = {
-    [CMD_HELP]       = STRLEN(cmdHelpStr),
-    [CMD_SHOW_CMDS]  = STRLEN(cmdShowCmdsStr),
-    [CMD_SAY_HELLO]  = STRLEN(cmdSayHelloStr),
-    [CMD_HELLA]      = STRLEN(cmdHellaStr),
-    [CMD_PRINT_TRIE] = STRLEN(cmdPrintTrieStr),
-    [CMD_EXIT]       = STRLEN(cmdExitStr)
 };
 
 int findCommand(const char* const str)
