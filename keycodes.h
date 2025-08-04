@@ -1,7 +1,7 @@
 #ifndef KEYCODES_H
 #define KEYCODES_H
 
-#include <stdbool.h>
+#define ANSI_ESCAPE   "\033["
 
 #define KEY_BACKSPACE 8
 #define KEY_TAB       9
@@ -13,7 +13,4 @@
 extern const char ansiEraseLineSeq[];
 extern const char ansiUpSeq[];
 
-bool isVisibleAsciiChar(const char c);
-
 #endif
-

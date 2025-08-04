@@ -1,10 +1,11 @@
 OS := $(shell uname)
-CFLAGS := -Wall -Wextra -Werror -pedantic
 ifeq ($(OS), Darwin)
 CC := clang
 else
 CC := gcc
 endif
+CFLAGS := -Wall -Wextra -Werror -pedantic
+#DEFINES := -DDEBUG
 
 src := $(wildcard *.c)
 hdr := $(wildcard *.h)
@@ -19,12 +20,11 @@ $(bin): $(obj)
 	$(CC) $^ -o $@
 
 main.o: main.c $(hdr)
-keycodes.o: keycodes.c
-commands.o: commands.c
-trie.o: trie.c
+keycodes.o: keycodes.c keycodes.h
+commands.o: commands.c commands.h
+trie.o: trie.c trie.h
 $(obj):
-	$(CC) -c $(CFLAGS) $< -o $@
+	$(CC) -c $(CFLAGS) $(DEFINES) $< -o $@
 
 clean:
 	rm -f $(obj) $(bin)
-

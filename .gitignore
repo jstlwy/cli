@@ -1,6 +1,9 @@
 # macOS
 .DS_Store
 
+# VSCode
+.vscode
+
 # Object files
 *.o
 
